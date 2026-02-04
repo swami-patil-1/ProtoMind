@@ -37,3 +37,12 @@ The agent learns to predict how the world changes in response to its actions.
 
 ## Status
 Early experimental research project.
+
+# Day-1
+
+Baby can walk in envirnoment
+
+# Day-2
+
+Parents, Stress, Pleasure, Fuzzy Memory Introduced.
+Baby is trying to maximize his pleasure for the time being.
