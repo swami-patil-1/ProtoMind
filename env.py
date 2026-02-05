@@ -1,10 +1,21 @@
 import numpy as np
+import random
+
 
 class SimpleWorld:
     def __init__(self, size=5):
         self.size = size
+
+        # fixed entities
         self.parent_pos = np.array([0, 0])
         self.danger_pos = np.array([size - 1, size - 1])
+
+        # random life events (id -> (pleasure, stress))
+        self.events = {
+            i: (random.uniform(0, 2), random.uniform(0, 2))
+            for i in range(1, 11)
+        }
+
         self.reset()
 
     def reset(self):
@@ -13,26 +24,36 @@ class SimpleWorld:
 
     def step(self, action):
         move = {
-            0: np.array([-1, 0]),
-            1: np.array([1, 0]),
-            2: np.array([0, -1]),
-            3: np.array([0, 1]),
-            4: np.array([0, 0])
+            0: np.array([-1, 0]),   # up
+            1: np.array([1, 0]),    # down
+            2: np.array([0, -1]),   # left
+            3: np.array([0, 1]),    # right
+            4: np.array([0, 0])     # stay
         }
 
         self.pos += move[action]
         self.pos = np.clip(self.pos, 0, self.size - 1)
 
-        reward = 0.0
-        pain = 0.0
+        pleasure = 0.0
+        stress = 0.0
+        event_id = None
 
+        # parent comfort
         if np.array_equal(self.pos, self.parent_pos):
-            reward = 1.0  # comfort / feeding
+            pleasure += 1.0
 
+        # danger
         if np.array_equal(self.pos, self.danger_pos):
-            pain = 1.0  # hurt
+            stress += 1.0
 
-        return self._get_state(), reward, pain
+        # random life events
+        if random.random() < 0.2:
+            event_id = random.randint(1, 10)
+            p, s = self.events[event_id]
+            pleasure += p
+            stress += s
+
+        return self._get_state(), pleasure, stress, event_id
 
     def _get_state(self):
         return self.pos.astype(np.float32) / (self.size - 1)

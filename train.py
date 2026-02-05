@@ -5,28 +5,21 @@ import random
 from env import SimpleWorld
 from brain import NewbornBrain
 
+
 env = SimpleWorld()
 brain = NewbornBrain()
 
 optimizer = torch.optim.Adam(brain.parameters(), lr=0.01)
 loss_fn = nn.MSELoss()
 
-state = torch.tensor(env.reset())
+state = torch.tensor(env.reset(), dtype=torch.float32)
 
 for step in range(10000):
 
-    # Preference-biased exploration
-    bias = brain.action_bias.detach().numpy()
-    probs = bias - bias.min() + 0.01  # make positive
-    probs = probs / probs.sum()
+    action = random.randint(0, brain.action_dim - 1)
 
-    if random.random() < brain.curiosity:
-        action = random.randint(0, 4)
-    else:
-        action = random.choices(range(5), weights=probs)[0]
-
-    next_state_np, reward, pain = env.step(action)
-    next_state = torch.tensor(next_state_np)
+    next_state_np, pleasure, stress, _ = env.step(action)
+    next_state = torch.tensor(next_state_np, dtype=torch.float32)
 
     pred_next_state = brain(state, action)
     loss = loss_fn(pred_next_state, next_state)
@@ -36,17 +29,23 @@ for step in range(10000):
     optimizer.step()
 
     brain.update_internal_state(
-        reward, pain, loss, state, action
+        pleasure=pleasure,
+        stress=stress,
+        prediction_error=loss,
+        state=state,
+        action=action,
+        step=step
     )
 
     state = next_state
 
-    if step % 300 == 0:
+    if step % 50 == 0:
         print(
-            f"Step {step} | "
+            f"Step {step:05d} | "
             f"Loss {loss.item():.4f} | "
             f"Pleasure {brain.pleasure:.2f} | "
             f"Stress {brain.stress:.2f} | "
             f"Curiosity {brain.curiosity:.2f} | "
-            f"Memories {len(brain.salient_memories)}"
+            f"WorkingMem {len(brain.working_memory)} | "
+            f"LTM {len(brain.long_term_memory)}"
         )

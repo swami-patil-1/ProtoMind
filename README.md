@@ -46,3 +46,15 @@ Baby can walk in envirnoment
 
 Parents, Stress, Pleasure, Fuzzy Memory Introduced.
 Baby is trying to maximize his pleasure for the time being.
+
+# Day-3
+
+Awake vs Sleep Phase (Stress and Curiosity Reduces as per sleep)
+Working memory vs long-term memory (LRU+Emotions Based)
+
+TO_DO: 
+Anticipation without planning
+(memory starts influencing expectation, not action)
+
+Or, alternatively:
+👉 Attachment (who caused this feeling)
