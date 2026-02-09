@@ -10,7 +10,7 @@ class SimpleWorld:
         self.parent_pos = np.array([0, 0])
         self.danger_pos = np.array([size - 1, size - 1])
 
-        # random life events (id -> (pleasure, stress))
+        # random life events (pleasure, stress)
         self.events = {
             i: (random.uniform(0, 2), random.uniform(0, 2))
             for i in range(1, 11)
@@ -36,7 +36,6 @@ class SimpleWorld:
 
         pleasure = 0.0
         stress = 0.0
-        event_id = None
 
         # parent comfort
         if np.array_equal(self.pos, self.parent_pos):
@@ -46,14 +45,14 @@ class SimpleWorld:
         if np.array_equal(self.pos, self.danger_pos):
             stress += 1.0
 
-        # random life events
+        # random life events (unlabeled sensations)
         if random.random() < 0.2:
-            event_id = random.randint(1, 10)
-            p, s = self.events[event_id]
+            p, s = random.choice(list(self.events.values()))
             pleasure += p
             stress += s
 
-        return self._get_state(), pleasure, stress, event_id
+        # IMPORTANT: return ONLY 3 values
+        return self._get_state(), pleasure, stress
 
     def _get_state(self):
         return self.pos.astype(np.float32) / (self.size - 1)

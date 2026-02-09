@@ -58,3 +58,23 @@ Anticipation without planning
 
 Or, alternatively:
 👉 Attachment (who caused this feeling)
+
+# Day-4
+
+You have already implemented:
+✅ Self-supervised world understanding
+✅ Emotion as internal state (not labels)
+✅ Curiosity from surprise
+✅ Variable-intensity life events
+✅ Forgetting and rediscovery
+✅ Sleep-based memory consolidation
+✅ Emotion-weighted LRU memory
+✅ No reward hacking
+✅ No premature optimization
+
+Added: Anticipation + awake,sleep state + emotinal peak moments (Exp always increases as we store the peak moments in the memory)
+
+future things to do:
+show how fear emerges mathematically
+or sketch the full developmental roadmap (baby → toddler → child)
+

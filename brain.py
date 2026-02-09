@@ -22,9 +22,21 @@ class NewbornBrain(nn.Module):
         self.stress = 0.0
         self.curiosity = 1.0
 
+        # anticipation (NEW)
+        self.expected_pleasure = 0.0
+        self.expected_stress = 0.0
+
         # memory systems
-        self.working_memory = []      # temporary (awake)
+        self.working_memory = []
         self.long_term_memory = SleepMemory(capacity=50)
+
+        # awake/sleep flags
+        self.is_awake = True
+        self.is_sleeping = False
+
+        # emotional peaks (per awake cycle)
+        self.peak_pleasure = 0.0
+        self.peak_stress = 0.0
 
         # sleep control
         self.sleep_interval = 500
@@ -44,12 +56,30 @@ class NewbornBrain(nn.Module):
         action,
         step
     ):
+        # awake phase
+        self.is_awake = True
+        self.is_sleeping = False
+
         # hormone updates
         self.pleasure = 0.95 * self.pleasure + pleasure
         self.stress = 0.95 * self.stress + stress
-        self.curiosity = 0.9 * self.curiosity + prediction_error.item()
 
-        # store in working memory (awake experience)
+        # anticipation influences baseline emotion (IMPORTANT)
+        self.stress += 0.1 * self.expected_stress
+        self.pleasure += 0.1 * self.expected_pleasure
+
+        # curiosity from surprise + anticipation mismatch
+        self.curiosity = (
+            0.85 * self.curiosity
+            + prediction_error.item()
+            + abs(self.expected_stress - stress)
+        )
+
+        # track emotional peaks
+        self.peak_pleasure = max(self.peak_pleasure, pleasure)
+        self.peak_stress = max(self.peak_stress, stress)
+
+        # store experience (lightweight)
         self.working_memory.append(
             (state.detach().clone(), action, pleasure, stress, step)
         )
@@ -59,19 +89,30 @@ class NewbornBrain(nn.Module):
             self.sleep(step)
 
     def sleep(self, step):
-        # consolidate memories
+        self.is_awake = False
+        self.is_sleeping = True
+
+        # consolidate only peak emotional experiences
         for state, action, pleasure, stress, t in self.working_memory:
-            if pleasure > 1.0 or stress > 1.0:
+            if pleasure >= self.peak_pleasure or stress >= self.peak_stress:
                 self.long_term_memory.store_experience(
                     state, action, pleasure, stress, t
                 )
 
         self.long_term_memory.sleep_and_consolidate(step)
 
-        # clear working memory
-        self.working_memory.clear()
-        self.last_sleep_step = step
+        # update anticipation from memory
+        ep, es = self.long_term_memory.get_expectations()
+        self.expected_pleasure = 0.9 * self.expected_pleasure + 0.1 * ep
+        self.expected_stress = 0.9 * self.expected_stress + 0.1 * es
 
-        # sleep reduces stress & curiosity
+        # reset awake buffers
+        self.working_memory.clear()
+        self.peak_pleasure = 0.0
+        self.peak_stress = 0.0
+
+        # sleep regulation
         self.stress *= 0.5
         self.curiosity *= 0.7
+
+        self.last_sleep_step = step

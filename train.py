@@ -18,7 +18,7 @@ for step in range(10000):
 
     action = random.randint(0, brain.action_dim - 1)
 
-    next_state_np, pleasure, stress, _ = env.step(action)
+    next_state_np, pleasure, stress = env.step(action)
     next_state = torch.tensor(next_state_np, dtype=torch.float32)
 
     pred_next_state = brain(state, action)
@@ -43,9 +43,10 @@ for step in range(10000):
         print(
             f"Step {step:05d} | "
             f"Loss {loss.item():.4f} | "
-            f"Pleasure {brain.pleasure:.2f} | "
-            f"Stress {brain.stress:.2f} | "
-            f"Curiosity {brain.curiosity:.2f} | "
-            f"WorkingMem {len(brain.working_memory)} | "
+            f"P {brain.pleasure:.2f} | "
+            f"S {brain.stress:.2f} | "
+            f"C {brain.curiosity:.2f} | "
+            f"ExpP {brain.expected_pleasure:.2f} | "
+            f"ExpS {brain.expected_stress:.2f} | "
             f"LTM {len(brain.long_term_memory)}"
         )
