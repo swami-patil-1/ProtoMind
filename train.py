@@ -14,7 +14,7 @@ loss_fn = nn.MSELoss()
 
 state = torch.tensor(env.reset(), dtype=torch.float32)
 
-for step in range(10000):
+for step in range(2000):
 
     action = random.randint(0, brain.action_dim - 1)
 

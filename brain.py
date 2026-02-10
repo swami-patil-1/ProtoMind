@@ -22,25 +22,21 @@ class NewbornBrain(nn.Module):
         self.stress = 0.0
         self.curiosity = 1.0
 
-        # anticipation (NEW)
+        # anticipation (state-dependent)
         self.expected_pleasure = 0.0
         self.expected_stress = 0.0
 
-        # memory systems
+        # memory
         self.working_memory = []
-        self.long_term_memory = SleepMemory(capacity=50)
-
-        # awake/sleep flags
-        self.is_awake = True
-        self.is_sleeping = False
-
-        # emotional peaks (per awake cycle)
-        self.peak_pleasure = 0.0
-        self.peak_stress = 0.0
+        self.long_term_memory = SleepMemory(capacity=1000)
 
         # sleep control
         self.sleep_interval = 500
         self.last_sleep_step = 0
+
+        # peak tracking
+        self.peak_pleasure = 0.0
+        self.peak_stress = 0.0
 
     def forward(self, state, action):
         action_onehot = torch.zeros(self.action_dim, device=state.device)
@@ -56,55 +52,46 @@ class NewbornBrain(nn.Module):
         action,
         step
     ):
-        # awake phase
-        self.is_awake = True
-        self.is_sleeping = False
-
-        # hormone updates
+        # update physiology
         self.pleasure = 0.95 * self.pleasure + pleasure
         self.stress = 0.95 * self.stress + stress
 
-        # anticipation influences baseline emotion (IMPORTANT)
-        self.stress += 0.1 * self.expected_stress
-        self.pleasure += 0.1 * self.expected_pleasure
+        # state-dependent anticipation
+        ep, es = self.long_term_memory.get_state_expectation(state)
+        self.expected_pleasure += 0.1 * (ep - self.expected_pleasure)
+        self.expected_stress += 0.1 * (es - self.expected_stress)
 
-        # curiosity from surprise + anticipation mismatch
+        # anticipation affects baseline emotion
+        self.pleasure += 0.1 * self.expected_pleasure
+        self.stress += 0.1 * self.expected_stress
+
+        # curiosity from surprise + mismatch
         self.curiosity = (
             0.85 * self.curiosity
             + prediction_error.item()
-            + abs(self.expected_stress - stress)
+            + abs(es - stress)
         )
 
-        # track emotional peaks
+        # track peaks
         self.peak_pleasure = max(self.peak_pleasure, pleasure)
         self.peak_stress = max(self.peak_stress, stress)
 
-        # store experience (lightweight)
+        # store *everything* (low intensity allowed)
         self.working_memory.append(
-            (state.detach().clone(), action, pleasure, stress, step)
+            (state.detach().clone(), pleasure, stress, step)
         )
 
-        # sleep trigger
         if step - self.last_sleep_step >= self.sleep_interval:
             self.sleep(step)
 
     def sleep(self, step):
-        self.is_awake = False
-        self.is_sleeping = True
-
-        # consolidate only peak emotional experiences
-        for state, action, pleasure, stress, t in self.working_memory:
-            if pleasure >= self.peak_pleasure or stress >= self.peak_stress:
-                self.long_term_memory.store_experience(
-                    state, action, pleasure, stress, t
-                )
+        # consolidate ALL experiences, intensity handled by scoring
+        for state, pleasure, stress, t in self.working_memory:
+            self.long_term_memory.store_experience(
+                state, pleasure, stress, t
+            )
 
         self.long_term_memory.sleep_and_consolidate(step)
-
-        # update anticipation from memory
-        ep, es = self.long_term_memory.get_expectations()
-        self.expected_pleasure = 0.9 * self.expected_pleasure + 0.1 * ep
-        self.expected_stress = 0.9 * self.expected_stress + 0.1 * es
 
         # reset awake buffers
         self.working_memory.clear()

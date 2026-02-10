@@ -78,3 +78,9 @@ future things to do:
 show how fear emerges mathematically
 or sketch the full developmental roadmap (baby → toddler → child)
 
+# Day-5
+
+Added : Increased LTM also normalised stored moments in the brain. safe and anxiousness added
+
+What to do next: 
+Attachment.
