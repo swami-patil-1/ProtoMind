@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import random
 
 from env import SimpleWorld
 from brain import NewbornBrain
@@ -14,13 +13,16 @@ loss_fn = nn.MSELoss()
 
 state = torch.tensor(env.reset(), dtype=torch.float32)
 
+
 for step in range(2000):
 
-    action = random.randint(0, brain.action_dim - 1)
+    # Weak emotion-driven reflex
+    action = brain.get_reflex_action()
 
-    next_state_np, pleasure, stress = env.step(action)
+    next_state_np, pleasure, stress, source = env.step(action)
     next_state = torch.tensor(next_state_np, dtype=torch.float32)
 
+    # World model prediction
     pred_next_state = brain(state, action)
     loss = loss_fn(pred_next_state, next_state)
 
@@ -31,6 +33,7 @@ for step in range(2000):
     brain.update_internal_state(
         pleasure=pleasure,
         stress=stress,
+        source=source,
         prediction_error=loss,
         state=state,
         action=action,

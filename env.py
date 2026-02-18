@@ -36,23 +36,26 @@ class SimpleWorld:
 
         pleasure = 0.0
         stress = 0.0
+        source = "none"
 
         # parent comfort
         if np.array_equal(self.pos, self.parent_pos):
             pleasure += 1.0
+            source = "parent"
 
-        # danger
-        if np.array_equal(self.pos, self.danger_pos):
+        # danger zone
+        elif np.array_equal(self.pos, self.danger_pos):
             stress += 1.0
+            source = "danger"
 
-        # random life events (unlabeled sensations)
-        if random.random() < 0.2:
+        # random events
+        elif random.random() < 0.2:
             p, s = random.choice(list(self.events.values()))
             pleasure += p
             stress += s
+            source = "event"
 
-        # IMPORTANT: return ONLY 3 values
-        return self._get_state(), pleasure, stress
+        return self._get_state(), pleasure, stress, source
 
     def _get_state(self):
         return self.pos.astype(np.float32) / (self.size - 1)

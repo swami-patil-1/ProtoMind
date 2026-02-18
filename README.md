@@ -84,3 +84,15 @@ Added : Increased LTM also normalised stored moments in the brain. safe and anxi
 
 What to do next: 
 Attachment.
+
+# Day-6
+
+You now have:
+-Perception
+-Emotion
+-Curiosity
+-Memory (large, balanced)
+-Sleep consolidation
+-State anticipation
+-Attachment (source anticipation)
+-Weak emotion-driven reflex

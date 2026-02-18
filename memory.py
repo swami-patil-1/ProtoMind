@@ -1,15 +1,16 @@
 class SleepMemory:
     def __init__(self, capacity=1000):
         self.capacity = capacity
-        self.memory = []  # list of dicts
+        self.memory = []
 
-    def store_experience(self, state, pleasure, stress, timestamp):
+    def store_experience(self, state, pleasure, stress, source, timestamp):
         intensity = pleasure + stress
 
         self.memory.append({
             "state": state,
             "pleasure": pleasure,
             "stress": stress,
+            "source": source,
             "intensity": intensity,
             "timestamp": timestamp,
             "score": 0.0
@@ -17,20 +18,13 @@ class SleepMemory:
 
     def sleep_and_consolidate(self, current_time):
         for m in self.memory:
-            # LRU component
             recency = 1.0 / (1.0 + (current_time - m["timestamp"]))
-
-            # frequency + intensity
             m["score"] = recency * (0.2 + m["intensity"])
 
-        # keep best memories only
         self.memory.sort(key=lambda x: x["score"], reverse=True)
         self.memory = self.memory[:self.capacity]
 
     def get_state_expectation(self, state):
-        """
-        Returns expected (pleasure, stress) for a given state.
-        """
         if not self.memory:
             return 0.0, 0.0
 
@@ -49,9 +43,19 @@ class SleepMemory:
         if total_weight == 0:
             return 0.0, 0.0
 
-        # normalize (belief, not accumulation)
-        ep /= (total_weight + 1e-6)
-        es /= (total_weight + 1e-6)
+        ep /= total_weight
+        es /= total_weight
+
+        return min(ep, 1.0), min(es, 1.0)
+
+    def get_source_expectation(self, source):
+        relevant = [m for m in self.memory if m["source"] == source]
+
+        if not relevant:
+            return 0.0, 0.0
+
+        ep = sum(m["pleasure"] for m in relevant) / len(relevant)
+        es = sum(m["stress"] for m in relevant) / len(relevant)
 
         return min(ep, 1.0), min(es, 1.0)
 
