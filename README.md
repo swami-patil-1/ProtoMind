@@ -96,3 +96,7 @@ You now have:
 -State anticipation
 -Attachment (source anticipation)
 -Weak emotion-driven reflex
+
+# Day-7
+
+Added Emotion-Driven Reflex so that now at least he tries to have more pleasure like Nomral Boy with age near 8.

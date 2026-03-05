@@ -43,20 +43,43 @@ class NewbornBrain(nn.Module):
     def get_reflex_action(self):
         probs = torch.ones(self.action_dim)
 
-        # Stress increases probability of staying (freeze tendency)
+        # Stress increases probability of staying
         probs[4] += 2.0 * self.expected_stress
 
-        # Pleasure increases movement tendency
+        # Pleasure increases movement
         movement_boost = 0.5 * self.expected_pleasure
         for i in range(self.action_dim - 1):
             probs[i] += movement_boost
 
-        # Curiosity increases overall randomness
+        # Curiosity increases randomness
         probs += 0.3 * self.curiosity
 
         probs = probs / probs.sum()
 
         return torch.multinomial(probs, 1).item()
+
+    # ----------- Goal Directed Action Selection -----------
+    def choose_action_with_prediction(self, state):
+
+        best_action = 0
+        best_value = -1e9
+
+        for action in range(self.action_dim):
+
+            # Predict next state
+            pred_state = self.forward(state, action)
+
+            # Memory expectation
+            ep_state, es_state = self.long_term_memory.get_state_expectation(pred_state)
+
+            # Value function
+            value = ep_state - es_state + 0.2 * self.curiosity
+
+            if value > best_value:
+                best_value = value
+                best_action = action
+
+        return best_action
 
     # ----------- Internal Update -----------
     def update_internal_state(
@@ -69,6 +92,7 @@ class NewbornBrain(nn.Module):
         action,
         step
     ):
+
         # Hormone updates
         self.pleasure = 0.95 * self.pleasure + pleasure
         self.stress = 0.95 * self.stress + stress
@@ -89,7 +113,7 @@ class NewbornBrain(nn.Module):
         self.pleasure += 0.1 * self.expected_pleasure
         self.stress += 0.1 * self.expected_stress
 
-        # Curiosity
+        # Curiosity update
         self.curiosity = (
             0.85 * self.curiosity
             + prediction_error.item()
@@ -106,12 +130,14 @@ class NewbornBrain(nn.Module):
 
     # ----------- Sleep -----------
     def sleep(self, step):
+
         for state, pleasure, stress, source, t in self.working_memory:
             self.long_term_memory.store_experience(
                 state, pleasure, stress, source, t
             )
 
         self.long_term_memory.sleep_and_consolidate(step)
+
         self.working_memory.clear()
 
         # Emotional regulation
