@@ -100,3 +100,7 @@ You now have:
 # Day-7
 
 Added Emotion-Driven Reflex so that now at least he tries to have more pleasure like Nomral Boy with age near 8.
+
+# Day-8
+
+Added Imp Parameters Like -> Spatial Map, Emotional Drives, Attention + Salience

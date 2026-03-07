@@ -15,18 +15,15 @@ loss_fn = nn.MSELoss()
 
 state = torch.tensor(env.reset(), dtype=torch.float32)
 
-# Metrics
 loss_hist = []
 pleasure_hist = []
 stress_hist = []
 curiosity_hist = []
-exp_p_hist = []
-exp_s_hist = []
 memory_hist = []
 
 for step in range(2000):
 
-    # Exploration vs prediction
+    # exploration vs prediction
     if random.random() < 0.2:
         action = brain.get_reflex_action()
     else:
@@ -35,7 +32,6 @@ for step in range(2000):
     next_state_np, pleasure, stress, source = env.step(action)
     next_state = torch.tensor(next_state_np, dtype=torch.float32)
 
-    # World model prediction
     pred_next_state = brain(state, action)
     loss = loss_fn(pred_next_state, next_state)
 
@@ -55,13 +51,10 @@ for step in range(2000):
 
     state = next_state
 
-    # Logging
     loss_hist.append(loss.item())
     pleasure_hist.append(brain.pleasure)
     stress_hist.append(brain.stress)
     curiosity_hist.append(brain.curiosity)
-    exp_p_hist.append(brain.expected_pleasure)
-    exp_s_hist.append(brain.expected_stress)
     memory_hist.append(len(brain.long_term_memory))
 
     if step % 50 == 0:
@@ -71,35 +64,47 @@ for step in range(2000):
             f"P {brain.pleasure:.2f} | "
             f"S {brain.stress:.2f} | "
             f"C {brain.curiosity:.2f} | "
-            f"ExpP {brain.expected_pleasure:.2f} | "
-            f"ExpS {brain.expected_stress:.2f} | "
             f"LTM {len(brain.long_term_memory)}"
         )
 
-# -------- Visualization --------
 
-plt.figure(figsize=(15,5))
+# -------- Graphs --------
+
+plt.figure(figsize=(14,4))
 
 plt.subplot(1,3,1)
-plt.plot(pleasure_hist, label="Pleasure")
-plt.plot(stress_hist, label="Stress")
-plt.plot(curiosity_hist, label="Curiosity")
+plt.plot(pleasure_hist,label="Pleasure")
+plt.plot(stress_hist,label="Stress")
 plt.title("Emotion Dynamics")
 plt.legend()
 
 plt.subplot(1,3,2)
-plt.plot(loss_hist, label="Prediction Loss")
-plt.plot(curiosity_hist, label="Curiosity")
-plt.title("Learning")
-
+plt.plot(curiosity_hist,label="Curiosity")
+plt.title("Curiosity")
 plt.legend()
 
 plt.subplot(1,3,3)
-plt.plot(exp_p_hist, label="Expected Pleasure")
-plt.plot(exp_s_hist, label="Expected Stress")
-plt.plot(memory_hist, label="Memory Size")
-plt.title("Memory & Anticipation")
+plt.plot(loss_hist,label="Prediction Loss")
+plt.title("World Model Learning")
 plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+
+# -------- Spatial Heatmaps --------
+
+plt.figure(figsize=(10,4))
+
+plt.subplot(1,2,1)
+plt.imshow(brain.pleasure_map, cmap="Greens")
+plt.colorbar()
+plt.title("Pleasure Map (Comfort Zones)")
+
+plt.subplot(1,2,2)
+plt.imshow(brain.stress_map, cmap="Reds")
+plt.colorbar()
+plt.title("Stress Map (Danger Zones)")
 
 plt.tight_layout()
 plt.show()
